@@ -7,6 +7,12 @@ function toggleTable() {
         table.style.display = "none";
     }
 }
-function nextEpisode(id) {
-    console.log("Increment series with id:", id);
+async function nextEpisode(id) {
+    const url = `/update?id=${id}`
+
+    const response = await fetch(url, {
+        method: "POST"
+    })
+
+    location.reload()
 }
