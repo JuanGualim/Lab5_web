@@ -169,8 +169,8 @@ func renderHome(conn net.Conn, db *sql.DB) {
 		}
 
 		rowsHTML += fmt.Sprintf(
-			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td></tr>",
-			id, name, current, total,
+			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td></tr>",
+			id, name, current, total, id,
 		)
 	}
 

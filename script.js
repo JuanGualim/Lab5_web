@@ -7,3 +7,6 @@ function toggleTable() {
         table.style.display = "none";
     }
 }
+function nextEpisode(id) {
+    console.log("Increment series with id:", id);
+}
