@@ -109,6 +109,11 @@ func handleClient(conn net.Conn, db *sql.DB) {
 
 		conn.Write([]byte(response))
 	}
+
+	if strings.Contains(request, "GET /create ") {
+		serveFile(conn, "create.html", "text/html")
+		return
+	}
 }
 func contains(s, substr string) bool {
 	return strings.Contains(s, substr)
