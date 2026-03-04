@@ -1,38 +1,97 @@
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f9;
+    margin: 0;
+    padding: 40px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+h1 {
+    margin-top: 0;
+}
+
+a {
+    text-decoration: none;
+    color: #1976d2;
+    font-weight: bold;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 table {
+    width: 100%;
     border-collapse: collapse;
-}
-
-th, td {
-    border: 1px solid black;
-    padding: 6px;
+    margin-top: 20px;
 }
 
 th {
-    background-color: #eeeeee;
+    background-color: #f0f2f5;
+    text-align: left;
+    padding: 12px;
 }
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+tr:hover {
+    background-color: #fafafa;
+}
+
+button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+button:first-child {
+    background-color: #e53935;
+    color: white;
+}
+
+button:last-child {
+    background-color: #43a047;
+    color: white;
+}
+
+/* Progress bar */
 
 .progress-bar {
     width: 120px;
-    height: 15px;
+    height: 12px;
     background-color: #e0e0e0;
     border-radius: 8px;
     overflow: hidden;
     display: inline-block;
     vertical-align: middle;
-    margin-right: 5px;
+    margin-right: 8px;
 }
 
 .progress-fill {
     height: 100%;
-    background-color: #4caf50;
+    background-color: #43a047;
     transition: width 0.3s ease;
 }
+
 .completed {
-    color: green;
+    color: #2e7d32;
     font-weight: bold;
 }
 

@@ -6,23 +6,24 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <div class="container">
 
-<h1>My Series</h1>
-<a href="/create">Add New Series</a> <br>
-<button onclick="toggleTable()">Mostrar / Ocultar tabla</button>
+    <h1>My Series</h1>
+    <a href="/create">Add New Series</a> <br>
+    <button onclick="toggleTable()">Mostrar / Ocultar tabla</button>
 
-<table>
-    <tr>
-        <th>#</th>
-        <th>Name</th>
-        <th>Current</th>
-        <th>Total</th>
-        <th>Progress</th>
-        <th>Actions</th>
-    </tr>
-    {{ROWS}}
-</table>
-
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Current</th>
+            <th>Total</th>
+            <th>Progress</th>
+            <th>Actions</th>
+        </tr>
+        {{ROWS}}
+    </table>
+    </div>
 <script src="/script.js"></script>
 </body>
 </html>
