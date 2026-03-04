@@ -14,19 +14,16 @@ import (
 )
 
 func main() {
-	// Abrir base de datos UNA sola vez
 	db, err := sql.Open("sqlite", "file:series.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	// Verificar conexión
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
-	// Iniciar servidor TCP
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatal(err)
@@ -41,7 +38,6 @@ func main() {
 			log.Println(err)
 			continue
 		}
-
 		go handleClient(conn, db)
 	}
 }
@@ -49,78 +45,43 @@ func main() {
 func handleClient(conn net.Conn, db *sql.DB) {
 	defer conn.Close()
 
-	buffer := make([]byte, 1024)
-	conn.Read(buffer)
-	request := string(buffer)
+	buffer := make([]byte, 2048)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		return
+	}
+
+	request := string(buffer[:n])
 
 	// Servir CSS
-	if contains(request, "GET /style.css") {
+	if strings.Contains(request, "GET /style.css") {
 		serveFile(conn, "style.css", "text/css")
 		return
 	}
 
 	// Servir JS
-	if contains(request, "GET /script.js") {
+	if strings.Contains(request, "GET /script.js") {
 		serveFile(conn, "script.js", "application/javascript")
 		return
 	}
 
-	// Página principal
-	if contains(request, "GET / ") {
-
-		rows, err := db.Query("SELECT id, name, current_episode, total_episodes FROM series")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		defer rows.Close()
-
-		var rowsHTML string
-
-		for rows.Next() {
-			var id int
-			var name string
-			var current int
-			var total int
-
-			err := rows.Scan(&id, &name, &current, &total)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			rowsHTML += fmt.Sprintf(
-				"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td></tr>",
-				id, name, current, total,
-			)
-		}
-
-		content, err := os.ReadFile("index.html")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		html := string(content)
-		html = strings.Replace(html, "{{ROWS}}", rowsHTML, 1)
-
-		response := "HTTP/1.1 200 OK\r\n" +
-			"Content-Type: text/html; charset=utf-8\r\n" +
-			"\r\n" +
-			html
-
-		conn.Write([]byte(response))
+	// GET /
+	if strings.Contains(request, "GET / ") {
+		renderHome(conn, db)
+		return
 	}
 
+	// GET /create
 	if strings.Contains(request, "GET /create ") {
 		serveFile(conn, "create.html", "text/html")
 		return
 	}
 
+	// POST /create
 	if strings.Contains(request, "POST /create") {
 
+		// Obtener Content-Length
 		lines := strings.Split(request, "\r\n")
-
 		var contentLength int
 
 		for _, line := range lines {
@@ -138,7 +99,6 @@ func handleClient(conn net.Conn, db *sql.DB) {
 
 		body := parts[1]
 
-		// A veces el buffer trae basura extra, cortamos exactamente Content-Length
 		if len(body) > contentLength {
 			body = body[:contentLength]
 		}
@@ -150,24 +110,85 @@ func handleClient(conn net.Conn, db *sql.DB) {
 		}
 
 		name := values.Get("series_name")
-		current := values.Get("current_episode")
-		total := values.Get("total_episodes")
+		currentStr := values.Get("current_episode")
+		totalStr := values.Get("total_episodes")
 
-		fmt.Println("Name:", name)
-		fmt.Println("Current:", current)
-		fmt.Println("Total:", total)
+		current, err := strconv.Atoi(currentStr)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
-		response := "HTTP/1.1 200 OK\r\n" +
-			"Content-Type: text/plain\r\n" +
-			"\r\n" +
-			"ok"
+		total, err := strconv.Atoi(totalStr)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// INSERT en SQLite
+		_, err = db.Exec(
+			"INSERT INTO series (name, current_episode, total_episodes) VALUES (?, ?, ?)",
+			name, current, total,
+		)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// Redirect 303
+		response := "HTTP/1.1 303 See Other\r\n" +
+			"Location: /\r\n" +
+			"\r\n"
 
 		conn.Write([]byte(response))
 		return
 	}
 }
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
+
+func renderHome(conn net.Conn, db *sql.DB) {
+
+	rows, err := db.Query("SELECT id, name, current_episode, total_episodes FROM series")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var rowsHTML string
+
+	for rows.Next() {
+		var id int
+		var name string
+		var current int
+		var total int
+
+		err := rows.Scan(&id, &name, &current, &total)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		rowsHTML += fmt.Sprintf(
+			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td></tr>",
+			id, name, current, total,
+		)
+	}
+
+	content, err := os.ReadFile("index.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	html := string(content)
+	html = strings.Replace(html, "{{ROWS}}", rowsHTML, 1)
+
+	response := "HTTP/1.1 200 OK\r\n" +
+		"Content-Type: text/html; charset=utf-8\r\n" +
+		"\r\n" +
+		html
+
+	conn.Write([]byte(response))
 }
 
 func serveFile(conn net.Conn, filename string, contentType string) {
