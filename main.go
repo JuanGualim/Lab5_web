@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -112,6 +114,55 @@ func handleClient(conn net.Conn, db *sql.DB) {
 
 	if strings.Contains(request, "GET /create ") {
 		serveFile(conn, "create.html", "text/html")
+		return
+	}
+
+	if strings.Contains(request, "POST /create") {
+
+		lines := strings.Split(request, "\r\n")
+
+		var contentLength int
+
+		for _, line := range lines {
+			if strings.HasPrefix(line, "Content-Length:") {
+				lengthStr := strings.TrimSpace(strings.TrimPrefix(line, "Content-Length:"))
+				contentLength, _ = strconv.Atoi(lengthStr)
+			}
+		}
+
+		// Separar headers del body
+		parts := strings.Split(request, "\r\n\r\n")
+		if len(parts) < 2 {
+			return
+		}
+
+		body := parts[1]
+
+		// A veces el buffer trae basura extra, cortamos exactamente Content-Length
+		if len(body) > contentLength {
+			body = body[:contentLength]
+		}
+
+		values, err := url.ParseQuery(body)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		name := values.Get("series_name")
+		current := values.Get("current_episode")
+		total := values.Get("total_episodes")
+
+		fmt.Println("Name:", name)
+		fmt.Println("Current:", current)
+		fmt.Println("Total:", total)
+
+		response := "HTTP/1.1 200 OK\r\n" +
+			"Content-Type: text/plain\r\n" +
+			"\r\n" +
+			"ok"
+
+		conn.Write([]byte(response))
 		return
 	}
 }
