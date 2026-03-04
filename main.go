@@ -159,13 +159,33 @@ func handleClient(conn net.Conn, db *sql.DB) {
 
 		current, err := strconv.Atoi(currentStr)
 		if err != nil {
-			log.Println(err)
+			sendBadRequest(conn, "Current episode must be a number")
 			return
 		}
 
 		total, err := strconv.Atoi(totalStr)
 		if err != nil {
-			log.Println(err)
+			sendBadRequest(conn, "Total episodes must be a number")
+			return
+		}
+
+		if strings.TrimSpace(name) == "" {
+			sendBadRequest(conn, "Name cannot be empty")
+			return
+		}
+
+		if current < 1 {
+			sendBadRequest(conn, "Current episode must be at least 1")
+			return
+		}
+
+		if total < 1 {
+			sendBadRequest(conn, "Total episodes must be at least 1")
+			return
+		}
+
+		if current > total {
+			sendBadRequest(conn, "Current episode cannot be greater than total episodes")
 			return
 		}
 
@@ -329,4 +349,12 @@ func serveFile(conn net.Conn, filename string, contentType string) {
 
 	conn.Write([]byte(response))
 	conn.Write(content)
+}
+func sendBadRequest(conn net.Conn, message string) {
+	response := "HTTP/1.1 400 Bad Request\r\n" +
+		"Content-Type: text/plain\r\n" +
+		"\r\n" +
+		message
+
+	conn.Write([]byte(response))
 }
