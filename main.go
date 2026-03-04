@@ -256,11 +256,48 @@ func renderHome(conn net.Conn, db *sql.DB) {
 			log.Println(err)
 			continue
 		}
+		progress := 0
+		completed := false
+
+		if total > 0 {
+			progress = (current * 100) / total
+		}
+
+		if current >= total {
+			completed = true
+		}
+
+		statusText := ""
+		barClass := "progress-fill"
+
+		if completed {
+			statusText = " <span class='completed'>✅ Completed</span>"
+			barClass = "progress-fill completed-bar"
+		}
 
 		rowsHTML += fmt.Sprintf(
-			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td><td><button onclick='prevEpisode(%d)'>-1</button> <button onclick='nextEpisode(%d)'>+1</button></td></tr>",
-			id, name, current, total, id, id,
+			`<tr>
+				<td>%d</td>
+				<td>%s</td>
+				<td>%d</td>
+				<td>%d</td>
+				<td>
+					<div class="progress-bar">
+						<div class="%s" style="width:%d%%;"></div>
+					</div>
+					%d%%%s
+				</td>
+				<td>
+					<button onclick='prevEpisode(%d)'>-1</button>
+					<button onclick='nextEpisode(%d)'>+1</button>
+				</td>
+			</tr>`,
+			id, name, current, total,
+			barClass, progress,
+			progress, statusText,
+			id, id,
 		)
+
 	}
 
 	content, err := os.ReadFile("index.html")

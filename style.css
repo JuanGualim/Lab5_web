@@ -14,3 +14,28 @@ th, td {
 th {
     background-color: #eeeeee;
 }
+
+.progress-bar {
+    width: 120px;
+    height: 15px;
+    background-color: #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #4caf50;
+    transition: width 0.3s ease;
+}
+.completed {
+    color: green;
+    font-weight: bold;
+}
+
+.completed-bar {
+    background-color: #2e7d32;
+}
