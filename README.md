@@ -89,3 +89,4 @@ Los siguientes challenges fueron completados:
 - ✅ Diseño mejorado (layout centrado, botones estilizados, hover effects).
 
 ## Captura de pantalla de servidor corriende
+![Series Tracker Screenshot](assets/image.png)
