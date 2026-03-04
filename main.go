@@ -65,22 +65,72 @@ func handleClient(conn net.Conn, db *sql.DB) {
 		return
 	}
 
+	if strings.HasPrefix(request, "POST /update") {
+
+		// Obtener la primera línea del request
+		lines := strings.Split(request, "\r\n")
+		requestLine := lines[0]
+
+		// Ejemplo:
+		// POST /update?id=3 HTTP/1.1
+		parts := strings.Split(requestLine, " ")
+		path := parts[1]
+
+		// Separar ruta y parámetros
+		pathParts := strings.SplitN(path, "?", 2)
+		route := pathParts[0]
+
+		if route == "/update" && len(pathParts) > 1 {
+
+			params, err := url.ParseQuery(pathParts[1])
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			idStr := params.Get("id")
+
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			// Ejecutar UPDATE
+			_, err = db.Exec(
+				`UPDATE series
+             SET current_episode = current_episode + 1
+             WHERE id = ? AND current_episode < total_episodes`,
+				id,
+			)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			response := "HTTP/1.1 200 OK\r\n" +
+				"Content-Type: text/plain\r\n" +
+				"\r\n" +
+				"ok"
+
+			conn.Write([]byte(response))
+			return
+		}
+	}
+
 	// GET /
 	if strings.Contains(request, "GET / ") {
 		renderHome(conn, db)
 		return
 	}
 
-	// GET /create
 	if strings.Contains(request, "GET /create ") {
 		serveFile(conn, "create.html", "text/html")
 		return
 	}
 
-	// POST /create
 	if strings.Contains(request, "POST /create") {
 
-		// Obtener Content-Length
 		lines := strings.Split(request, "\r\n")
 		var contentLength int
 
@@ -90,8 +140,6 @@ func handleClient(conn net.Conn, db *sql.DB) {
 				contentLength, _ = strconv.Atoi(lengthStr)
 			}
 		}
-
-		// Separar headers del body
 		parts := strings.Split(request, "\r\n\r\n")
 		if len(parts) < 2 {
 			return
