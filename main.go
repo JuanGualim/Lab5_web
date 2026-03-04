@@ -67,12 +67,9 @@ func handleClient(conn net.Conn, db *sql.DB) {
 
 	if strings.HasPrefix(request, "POST /update") {
 
-		// Obtener la primera línea del request
 		lines := strings.Split(request, "\r\n")
 		requestLine := lines[0]
 
-		// Ejemplo:
-		// POST /update?id=3 HTTP/1.1
 		parts := strings.Split(requestLine, " ")
 		path := parts[1]
 
@@ -96,7 +93,6 @@ func handleClient(conn net.Conn, db *sql.DB) {
 				return
 			}
 
-			// Ejecutar UPDATE
 			_, err = db.Exec(
 				`UPDATE series
              SET current_episode = current_episode + 1
@@ -173,7 +169,6 @@ func handleClient(conn net.Conn, db *sql.DB) {
 			return
 		}
 
-		// INSERT en SQLite
 		_, err = db.Exec(
 			"INSERT INTO series (name, current_episode, total_episodes) VALUES (?, ?, ?)",
 			name, current, total,
@@ -183,13 +178,59 @@ func handleClient(conn net.Conn, db *sql.DB) {
 			return
 		}
 
-		// Redirect 303
 		response := "HTTP/1.1 303 See Other\r\n" +
 			"Location: /\r\n" +
 			"\r\n"
 
 		conn.Write([]byte(response))
 		return
+	}
+	if strings.HasPrefix(request, "POST /decrement") {
+
+		lines := strings.Split(request, "\r\n")
+		requestLine := lines[0]
+
+		parts := strings.Split(requestLine, " ")
+		path := parts[1]
+
+		pathParts := strings.SplitN(path, "?", 2)
+		route := pathParts[0]
+
+		if route == "/decrement" && len(pathParts) > 1 {
+
+			params, err := url.ParseQuery(pathParts[1])
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			idStr := params.Get("id")
+
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			_, err = db.Exec(
+				`UPDATE series
+             SET current_episode = current_episode - 1
+             WHERE id = ? AND current_episode > 1`,
+				id,
+			)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			response := "HTTP/1.1 200 OK\r\n" +
+				"Content-Type: text/plain\r\n" +
+				"\r\n" +
+				"ok"
+
+			conn.Write([]byte(response))
+			return
+		}
 	}
 }
 
@@ -217,8 +258,8 @@ func renderHome(conn net.Conn, db *sql.DB) {
 		}
 
 		rowsHTML += fmt.Sprintf(
-			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td><td><button onclick='nextEpisode(%d)'>+1</button></td></tr>",
-			id, name, current, total, id,
+			"<tr><td>%d</td><td>%s</td><td>%d</td><td>%d</td><td><button onclick='prevEpisode(%d)'>-1</button> <button onclick='nextEpisode(%d)'>+1</button></td></tr>",
+			id, name, current, total, id, id,
 		)
 	}
 

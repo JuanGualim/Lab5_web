@@ -16,3 +16,13 @@ async function nextEpisode(id) {
 
     location.reload()
 }
+
+async function prevEpisode(id) {
+    const url = `/decrement?id=${id}`
+
+    const response = await fetch(url, {
+        method: "POST"
+    })
+
+    location.reload()
+}
